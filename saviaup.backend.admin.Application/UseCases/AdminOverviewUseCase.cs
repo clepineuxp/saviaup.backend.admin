@@ -16,18 +16,11 @@ public sealed class AdminOverviewUseCase(
     {
         try
         {
-            var countsTask = operationalPort.GetCountsAsync(cancellationToken);
-            var organizationsTask = operationalPort.GetOrganizationsAsync(cancellationToken);
-            var operationsTask = operationalPort.GetOperationsAsync(cancellationToken);
-            var assignmentsTask = planRepository.GetAssignmentsAsync(cancellationToken);
-            var auditTask = auditRepository.ListRecentAsync(8, cancellationToken);
-            await Task.WhenAll(countsTask, organizationsTask, operationsTask, assignmentsTask, auditTask);
-
-            var counts = await countsTask;
-            var organizations = await organizationsTask;
-            var operations = await operationsTask;
-            var assignments = await assignmentsTask;
-            var audits = await auditTask;
+            var counts = await operationalPort.GetCountsAsync(cancellationToken);
+            var organizations = await operationalPort.GetOrganizationsAsync(cancellationToken);
+            var operations = await operationalPort.GetOperationsAsync(cancellationToken);
+            var assignments = await planRepository.GetAssignmentsAsync(cancellationToken);
+            var audits = await auditRepository.ListRecentAsync(8, cancellationToken);
             var mrr = organizations.Where(item => item.IsActive)
                 .Sum(item => assignments.TryGetValue(item.Id, out var assignment) && assignment.Plan?.Status != PlanStatuses.Archived
                     ? assignment.Plan?.MonthlyPrice ?? 0
@@ -76,13 +69,11 @@ public sealed class AdminOverviewUseCase(
     {
         try
         {
-            var organizationsTask = operationalPort.GetOrganizationsAsync(cancellationToken);
-            var assignmentsTask = planRepository.GetAssignmentsAsync(cancellationToken);
-            var operationsTask = operationalPort.GetOperationsAsync(cancellationToken);
-            await Task.WhenAll(organizationsTask, assignmentsTask, operationsTask);
-            var assignments = await assignmentsTask;
-            var operationByTenant = (await operationsTask).ToDictionary(item => item.OrganizationId);
-            var mapped = (await organizationsTask).Select(item => MapOrganization(
+            var organizations = await operationalPort.GetOrganizationsAsync(cancellationToken);
+            var assignments = await planRepository.GetAssignmentsAsync(cancellationToken);
+            var operations = await operationalPort.GetOperationsAsync(cancellationToken);
+            var operationByTenant = operations.ToDictionary(item => item.OrganizationId);
+            var mapped = organizations.Select(item => MapOrganization(
                 item,
                 assignments.GetValueOrDefault(item.Id),
                 operationByTenant.GetValueOrDefault(item.Id)?.Health ?? (item.IsActive ? "ATTENTION" : "INACTIVE"),
@@ -97,14 +88,11 @@ public sealed class AdminOverviewUseCase(
     {
         try
         {
-            var detailTask = operationalPort.GetOrganizationAsync(id, cancellationToken);
-            var assignmentTask = planRepository.GetAssignmentAsync(id, cancellationToken);
-            var operationsTask = operationalPort.GetOperationsAsync(cancellationToken);
-            await Task.WhenAll(detailTask, assignmentTask, operationsTask);
-            var operational = await detailTask;
+            var operational = await operationalPort.GetOrganizationAsync(id, cancellationToken);
             if (operational is null) return Result<OrganizationDetailDto>.Failure(AdminErrors.OrganizationNotFound);
-            var assignment = await assignmentTask;
-            var operation = (await operationsTask).SingleOrDefault(item => item.OrganizationId == id);
+            var assignment = await planRepository.GetAssignmentAsync(id, cancellationToken);
+            var operations = await operationalPort.GetOperationsAsync(cancellationToken);
+            var operation = operations.SingleOrDefault(item => item.OrganizationId == id);
             var summary = MapOrganization(operational.Organization, assignment, operation?.Health ?? (operational.Organization.IsActive ? "ATTENTION" : "INACTIVE"), assignment?.Plan);
             var enabled = operational.Organization.EnabledPermissionCodes.ToHashSet(StringComparer.Ordinal);
             var permissions = operational.PermissionCatalog.OrderBy(item => item.ModuleName).ThenBy(item => item.Code)
