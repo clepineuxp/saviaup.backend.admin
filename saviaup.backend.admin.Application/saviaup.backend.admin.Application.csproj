@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>SaviaUp.Admin.Application</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\saviaup.backend.admin.Domain\saviaup.backend.admin.Domain.csproj" />
+  </ItemGroup>
+</Project>
