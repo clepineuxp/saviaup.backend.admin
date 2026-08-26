@@ -33,6 +33,8 @@ El cambio se guarda primero en la base administrativa con estado `PENDING`. Lueg
 
 No se simula una transacción distribuida entre bases. Así un fallo operacional queda visible, auditable y recuperable.
 
+Una organización no necesita tener un plan. `PATCH /api/admin/organizations/{id}/permissions/{permissionCode}` inicia automáticamente la gestión manual con `PlanId = null`. En el primer cambio se conserva el conjunto de permisos que el tenant ya tiene en la plataforma y solo se modifica el permiso solicitado. Los cambios posteriores continúan sincronizando el conjunto manual completo con `tenant_permissions`.
+
 Ejemplos que pueden configurarse desde la UI, sin quedar quemados en código:
 
 - `STANDARD`: mesas, categorías y productos.

@@ -51,6 +51,7 @@ public interface IOperationalAdminPort
     Task<OperationalOrganizationDetail?> GetOrganizationAsync(Guid organizationId, CancellationToken cancellationToken);
     Task<IReadOnlyCollection<OrganizationOperationDto>> GetOperationsAsync(OperationalStatusPolicy policy, CancellationToken cancellationToken);
     Task<IReadOnlyCollection<OperationalPermission>> GetPermissionCatalogAsync(CancellationToken cancellationToken);
+    Task<IReadOnlyCollection<string>> GetTenantPermissionCodesAsync(Guid organizationId, CancellationToken cancellationToken);
     Task<bool> OrganizationExistsAsync(Guid organizationId, CancellationToken cancellationToken);
     Task ReplaceTenantPermissionsAsync(Guid organizationId, IReadOnlyCollection<string> permissionCodes, CancellationToken cancellationToken);
     Task<bool> SetOrganizationStatusAsync(Guid organizationId, bool isActive, CancellationToken cancellationToken);

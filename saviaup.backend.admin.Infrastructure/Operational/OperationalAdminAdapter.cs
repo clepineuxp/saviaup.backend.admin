@@ -144,6 +144,19 @@ internal sealed class OperationalAdminAdapter(
                 item.Id, item.Code, item.Description, item.Module.Code, item.Module.Name, item.Module.IsActive))
             .ToArrayAsync(cancellationToken);
 
+    public async Task<IReadOnlyCollection<string>> GetTenantPermissionCodesAsync(
+        Guid organizationId,
+        CancellationToken cancellationToken)
+        => await platformContext.TenantPermissions.AsNoTracking()
+            .Where(item => item.TenantId == organizationId)
+            .Join(
+                platformContext.Permissions.AsNoTracking(),
+                tenantPermission => tenantPermission.PermissionId,
+                permission => permission.Id,
+                (_, permission) => permission.Code)
+            .OrderBy(code => code)
+            .ToArrayAsync(cancellationToken);
+
     public Task<bool> OrganizationExistsAsync(Guid organizationId, CancellationToken cancellationToken)
         => platformContext.Tenants.AsNoTracking().AnyAsync(item => item.Id == organizationId, cancellationToken);
 

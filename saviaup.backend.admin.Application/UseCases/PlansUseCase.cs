@@ -227,6 +227,8 @@ public sealed class PlansUseCase(
 
         var now = clock.UtcNow;
         var assignment = await repository.GetAssignmentAsync(organizationId, cancellationToken);
+        var initializeManualPermissions = assignment is null ||
+            (assignment.PlanId is null && assignment.Overrides.Count == 0);
         if (assignment is null)
         {
             assignment = new TenantPlanAssignment
@@ -238,6 +240,21 @@ public sealed class PlansUseCase(
                 SyncStatus = PermissionSyncStatuses.Pending
             };
             await repository.AddAssignmentAsync(assignment, cancellationToken);
+        }
+
+        if (initializeManualPermissions)
+        {
+            var currentPermissionCodes = await operationalPort.GetTenantPermissionCodesAsync(
+                organizationId,
+                cancellationToken);
+            foreach (var currentCode in currentPermissionCodes.Distinct(StringComparer.Ordinal))
+                assignment.Overrides.Add(new TenantPermissionOverride
+                {
+                    AssignmentId = assignment.Id,
+                    PermissionCode = currentCode,
+                    IsEnabled = true,
+                    UpdatedAt = now
+                });
         }
 
         var existing = assignment.Overrides.SingleOrDefault(item => item.PermissionCode == normalizedCode);

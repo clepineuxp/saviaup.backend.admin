@@ -87,6 +87,39 @@ public sealed class PlansUseCaseTests
     }
 
     [Fact]
+    public async Task Manual_permission_change_without_plan_preserves_other_current_permissions()
+    {
+        var fixture = new Fixture();
+        fixture.Operational.Setup(item => item.GetPermissionCatalogAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Catalog("tables.read", "products.read"));
+        fixture.Operational.Setup(item => item.OrganizationExistsAsync(TenantId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        fixture.Operational.Setup(item => item.GetTenantPermissionCodesAsync(TenantId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(["products.read", "tables.read"]);
+        fixture.Plans.Setup(item => item.GetAssignmentAsync(TenantId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((TenantPlanAssignment?)null);
+        TenantPlanAssignment? assignment = null;
+        fixture.Plans.Setup(item => item.AddAssignmentAsync(It.IsAny<TenantPlanAssignment>(), It.IsAny<CancellationToken>()))
+            .Callback<TenantPlanAssignment, CancellationToken>((value, _) => assignment = value)
+            .Returns(Task.CompletedTask);
+
+        var result = await fixture.Create().SetPermissionOverrideAsync(
+            TenantId,
+            "tables.read",
+            false,
+            CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(assignment);
+        Assert.Null(assignment.PlanId);
+        Assert.Equal(2, assignment.Overrides.Count);
+        fixture.Operational.Verify(item => item.ReplaceTenantPermissionsAsync(
+            TenantId,
+            It.Is<IReadOnlyCollection<string>>(codes => codes.SequenceEqual(new[] { "products.read" })),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
     public async Task Plan_rejects_unknown_operational_permission()
     {
         var fixture = new Fixture();
