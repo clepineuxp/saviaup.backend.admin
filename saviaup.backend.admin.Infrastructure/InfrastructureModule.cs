@@ -32,6 +32,7 @@ public static class InfrastructureModule
         services.AddScoped<IAdminIdentityRepository, AdminIdentityRepository>();
         services.AddScoped<IPlanRepository, PlanRepository>();
         services.AddScoped<IAuditRepository, AuditRepository>();
+        services.AddScoped<IOperationStatusSettingsRepository, OperationStatusSettingsRepository>();
         services.AddScoped<IAdminUnitOfWork, AdminUnitOfWork>();
         services.AddScoped<IOperationalAdminPort, OperationalAdminAdapter>();
         services.AddSingleton<IDateTimeProvider, SystemDateTimeProvider>();

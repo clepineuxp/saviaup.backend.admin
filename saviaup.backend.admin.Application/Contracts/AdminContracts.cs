@@ -101,6 +101,21 @@ public sealed record OrganizationOperationDto(
     DateTimeOffset? LastOrderAt,
     IReadOnlyCollection<OperationIssueDto> Issues);
 
+public sealed record OperationStatusSettingsDto(
+    bool InactivityRuleEnabled,
+    int InactivityThresholdMinutes,
+    string InactivitySeverity,
+    bool CashRegisterRuleEnabled,
+    string CashRegisterSeverity,
+    DateTimeOffset? UpdatedAt);
+
+public sealed record UpdateOperationStatusSettingsRequest(
+    bool InactivityRuleEnabled,
+    int InactivityThresholdMinutes,
+    string InactivitySeverity,
+    bool CashRegisterRuleEnabled,
+    string CashRegisterSeverity);
+
 public sealed record PlatformPlanDto(
     Guid Id,
     string Code,

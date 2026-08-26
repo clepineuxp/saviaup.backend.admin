@@ -9,6 +9,7 @@ namespace SaviaUp.Admin.Application.UseCases;
 public sealed class AdminOverviewUseCase(
     IOperationalAdminPort operationalPort,
     IPlanRepository planRepository,
+    IOperationStatusSettingsRepository operationSettingsRepository,
     IAuditRepository auditRepository,
     IDateTimeProvider clock) : IAdminOverviewUseCase
 {
@@ -18,7 +19,8 @@ public sealed class AdminOverviewUseCase(
         {
             var counts = await operationalPort.GetCountsAsync(cancellationToken);
             var organizations = await operationalPort.GetOrganizationsAsync(cancellationToken);
-            var operations = await operationalPort.GetOperationsAsync(cancellationToken);
+            var policy = OperationStatusSettingsUseCase.ToPolicy(await operationSettingsRepository.GetAsync(cancellationToken));
+            var operations = await operationalPort.GetOperationsAsync(policy, cancellationToken);
             var assignments = await planRepository.GetAssignmentsAsync(cancellationToken);
             var audits = await auditRepository.ListRecentAsync(8, cancellationToken);
             var mrr = organizations.Where(item => item.IsActive)
@@ -71,7 +73,8 @@ public sealed class AdminOverviewUseCase(
         {
             var organizations = await operationalPort.GetOrganizationsAsync(cancellationToken);
             var assignments = await planRepository.GetAssignmentsAsync(cancellationToken);
-            var operations = await operationalPort.GetOperationsAsync(cancellationToken);
+            var policy = OperationStatusSettingsUseCase.ToPolicy(await operationSettingsRepository.GetAsync(cancellationToken));
+            var operations = await operationalPort.GetOperationsAsync(policy, cancellationToken);
             var operationByTenant = operations.ToDictionary(item => item.OrganizationId);
             var mapped = organizations.Select(item => MapOrganization(
                 item,
@@ -91,7 +94,8 @@ public sealed class AdminOverviewUseCase(
             var operational = await operationalPort.GetOrganizationAsync(id, cancellationToken);
             if (operational is null) return Result<OrganizationDetailDto>.Failure(AdminErrors.OrganizationNotFound);
             var assignment = await planRepository.GetAssignmentAsync(id, cancellationToken);
-            var operations = await operationalPort.GetOperationsAsync(cancellationToken);
+            var policy = OperationStatusSettingsUseCase.ToPolicy(await operationSettingsRepository.GetAsync(cancellationToken));
+            var operations = await operationalPort.GetOperationsAsync(policy, cancellationToken);
             var operation = operations.SingleOrDefault(item => item.OrganizationId == id);
             var summary = MapOrganization(operational.Organization, assignment, operation?.Health ?? (operational.Organization.IsActive ? "ATTENTION" : "INACTIVE"), assignment?.Plan);
             var enabled = operational.Organization.EnabledPermissionCodes.ToHashSet(StringComparer.Ordinal);
@@ -127,7 +131,8 @@ public sealed class AdminOverviewUseCase(
     {
         try
         {
-            return Result<IReadOnlyCollection<OrganizationOperationDto>>.Success(await operationalPort.GetOperationsAsync(cancellationToken));
+            var policy = OperationStatusSettingsUseCase.ToPolicy(await operationSettingsRepository.GetAsync(cancellationToken));
+            return Result<IReadOnlyCollection<OrganizationOperationDto>>.Success(await operationalPort.GetOperationsAsync(policy, cancellationToken));
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
         catch { return Result<IReadOnlyCollection<OrganizationOperationDto>>.Failure(AdminErrors.OperationalUnavailable); }

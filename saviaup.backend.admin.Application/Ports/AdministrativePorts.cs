@@ -31,6 +31,12 @@ public interface IAuditRepository
     Task<IReadOnlyCollection<AdminAuditLog>> ListRecentAsync(int take, CancellationToken cancellationToken);
 }
 
+public interface IOperationStatusSettingsRepository
+{
+    Task<OperationStatusSettings?> GetAsync(CancellationToken cancellationToken);
+    Task AddAsync(OperationStatusSettings settings, CancellationToken cancellationToken);
+}
+
 public interface IAdminUnitOfWork
 {
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
@@ -43,7 +49,7 @@ public interface IOperationalAdminPort
     Task<PlatformUserDto?> GetUserAsync(Guid userId, CancellationToken cancellationToken);
     Task<IReadOnlyCollection<OperationalOrganization>> GetOrganizationsAsync(CancellationToken cancellationToken);
     Task<OperationalOrganizationDetail?> GetOrganizationAsync(Guid organizationId, CancellationToken cancellationToken);
-    Task<IReadOnlyCollection<OrganizationOperationDto>> GetOperationsAsync(CancellationToken cancellationToken);
+    Task<IReadOnlyCollection<OrganizationOperationDto>> GetOperationsAsync(OperationalStatusPolicy policy, CancellationToken cancellationToken);
     Task<IReadOnlyCollection<OperationalPermission>> GetPermissionCatalogAsync(CancellationToken cancellationToken);
     Task<bool> OrganizationExistsAsync(Guid organizationId, CancellationToken cancellationToken);
     Task ReplaceTenantPermissionsAsync(Guid organizationId, IReadOnlyCollection<string> permissionCodes, CancellationToken cancellationToken);

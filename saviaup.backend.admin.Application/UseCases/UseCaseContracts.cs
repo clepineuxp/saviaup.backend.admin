@@ -45,3 +45,9 @@ public interface IOrganizationAdministrationUseCase
     Task<Result<PlatformUserDto>> SetMembershipStatusAsync(Guid membershipId, bool isActive, CancellationToken cancellationToken);
     Task<Result<PlatformUserDto>> ReassignMembershipAsync(ReassignMembershipRequest request, CancellationToken cancellationToken);
 }
+
+public interface IOperationStatusSettingsUseCase
+{
+    Task<Result<OperationStatusSettingsDto>> GetAsync(CancellationToken cancellationToken);
+    Task<Result<OperationStatusSettingsDto>> UpdateAsync(UpdateOperationStatusSettingsRequest request, CancellationToken cancellationToken);
+}

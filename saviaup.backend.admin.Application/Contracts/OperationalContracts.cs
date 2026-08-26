@@ -29,3 +29,10 @@ public sealed record OperationalOrganizationDetail(
     IReadOnlyCollection<OperationalPermission> PermissionCatalog);
 
 public sealed record OperationalCounts(int TotalUsers, int ActiveUsers, int TotalOrganizations, int ActiveOrganizations);
+
+public sealed record OperationalStatusPolicy(
+    bool InactivityRuleEnabled,
+    int InactivityThresholdMinutes,
+    string InactivitySeverity,
+    bool CashRegisterRuleEnabled,
+    string CashRegisterSeverity);

@@ -23,6 +23,7 @@ builder.Services.AddScoped<IAdminAuthUseCase, AdminAuthUseCase>();
 builder.Services.AddScoped<IAdminUsersUseCase, AdminUsersUseCase>();
 builder.Services.AddScoped<IPlansUseCase, PlansUseCase>();
 builder.Services.AddScoped<IAdminOverviewUseCase, AdminOverviewUseCase>();
+builder.Services.AddScoped<IOperationStatusSettingsUseCase, OperationStatusSettingsUseCase>();
 builder.Services.AddScoped<IOrganizationAdministrationUseCase, OrganizationAdministrationUseCase>();
 builder.Services.AddInfrastructure(builder.Configuration);
 

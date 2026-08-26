@@ -67,6 +67,7 @@ La dirección de dependencias es `Domain <- Application <- Infrastructure <- Api
 - historial de cambios de precio;
 - asignación de plan y excepciones de permisos por organización;
 - supervisión consolidada de órdenes, ventas, mesas y cajas;
+- reglas configurables de estado operacional, con umbral, severidad y activación por hallazgo;
 - auditoría inmutable de mutaciones sensibles;
 - correlation id, CORS restringido, rate limiting de login y errores estables.
 
@@ -161,6 +162,9 @@ Esto permite incorporar el plan al flujo de alta sin hacer que la base o el API 
 POST  /api/admin/auth/login
 
 GET   /api/admin/dashboard
+GET   /api/admin/operations
+GET   /api/admin/operations/settings
+PUT   /api/admin/operations/settings
 GET   /api/admin/users
 POST  /api/admin/users/{userId}/password-reset
 PATCH /api/admin/memberships/{membershipId}/status

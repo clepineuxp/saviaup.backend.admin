@@ -63,6 +63,17 @@ public sealed class AuditRepository(AdminDbContext context) : IAuditRepository
         => await context.AuditLogs.AsNoTracking().OrderByDescending(item => item.OccurredAt).Take(take).ToArrayAsync(cancellationToken);
 }
 
+public sealed class OperationStatusSettingsRepository(AdminDbContext context) : IOperationStatusSettingsRepository
+{
+    public Task<OperationStatusSettings?> GetAsync(CancellationToken cancellationToken)
+        => context.OperationStatusSettings.SingleOrDefaultAsync(
+            item => item.Id == OperationStatusSettings.SingletonId,
+            cancellationToken);
+
+    public async Task AddAsync(OperationStatusSettings settings, CancellationToken cancellationToken)
+        => await context.OperationStatusSettings.AddAsync(settings, cancellationToken);
+}
+
 public sealed class AdminUnitOfWork(AdminDbContext context) : IAdminUnitOfWork
 {
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken) => context.SaveChangesAsync(cancellationToken);

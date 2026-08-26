@@ -92,7 +92,9 @@ internal sealed class OperationalAdminAdapter(
         return new OperationalOrganizationDetail(organization, members, await GetPermissionCatalogAsync(cancellationToken));
     }
 
-    public async Task<IReadOnlyCollection<OrganizationOperationDto>> GetOperationsAsync(CancellationToken cancellationToken)
+    public async Task<IReadOnlyCollection<OrganizationOperationDto>> GetOperationsAsync(
+        OperationalStatusPolicy policy,
+        CancellationToken cancellationToken)
     {
         var tenants = await platformContext.Tenants.AsNoTracking().OrderBy(item => item.Name).ToArrayAsync(cancellationToken);
         var tenantIds = tenants.Select(item => item.Id).ToArray();
@@ -114,7 +116,7 @@ internal sealed class OperationalAdminAdapter(
             var occupied = tenantTables.Count(item => item.Status == "OCCUPIED");
             var openCash = openShifts.Count(item => item.TenantId == tenant.Id);
             var lastOrder = lastOrders.GetValueOrDefault(tenant.Id);
-            var issues = BuildIssues(tenant, orders.Length, openCash, lastOrder);
+            var issues = BuildIssues(tenant, orders.Length, openCash, lastOrder, policy);
             var health = !tenant.IsActive ? "INACTIVE" : issues.Any(item => item.Severity == "CRITICAL") ? "CRITICAL" : issues.Count > 0 ? "ATTENTION" : "HEALTHY";
             var apiStatus = !tenant.IsActive ? "OFFLINE" : health == "CRITICAL" ? "DEGRADED" : "ONLINE";
             return new OrganizationOperationDto(
@@ -286,16 +288,28 @@ internal sealed class OperationalAdminAdapter(
             .GroupBy(item => item.UserId).Select(group => new { UserId = group.Key, LastAt = group.Max(item => item.CreatedAt) })
             .ToDictionaryAsync(item => item.UserId, item => (DateTimeOffset?)item.LastAt, cancellationToken);
 
-    private IReadOnlyCollection<OperationIssueDto> BuildIssues(OperationalTenant tenant, int todayOrders, int openCash, DateTimeOffset? lastOrder)
+    private IReadOnlyCollection<OperationIssueDto> BuildIssues(
+        OperationalTenant tenant,
+        int todayOrders,
+        int openCash,
+        DateTimeOffset? lastOrder,
+        OperationalStatusPolicy policy)
     {
         if (!tenant.IsActive) return [];
         var issues = new List<OperationIssueDto>();
-        if (tenant.RequiresOpenCashRegister && openCash == 0)
-            issues.Add(new OperationIssueDto("WARNING", "No hay una caja abierta para la operación."));
-        if (todayOrders > 0 && lastOrder < clock.UtcNow.AddHours(-2))
-            issues.Add(new OperationIssueDto("CRITICAL", "No hay actividad de órdenes en las últimas dos horas."));
+        if (policy.CashRegisterRuleEnabled && tenant.RequiresOpenCashRegister && openCash == 0)
+            issues.Add(new OperationIssueDto(policy.CashRegisterSeverity, "No hay una caja abierta para la operación."));
+        if (policy.InactivityRuleEnabled && todayOrders > 0 && lastOrder < clock.UtcNow.AddMinutes(-policy.InactivityThresholdMinutes))
+            issues.Add(new OperationIssueDto(
+                policy.InactivitySeverity,
+                $"No hay actividad de órdenes en los últimos {FormatThreshold(policy.InactivityThresholdMinutes)}."));
         return issues;
     }
+
+    private static string FormatThreshold(int minutes)
+        => minutes % 60 == 0
+            ? minutes == 60 ? "60 minutos (1 hora)" : $"{minutes} minutos ({minutes / 60} horas)"
+            : $"{minutes} minutos";
 
     private bool IsEnabled(OperationalMembership membership)
         => membership.IsActive || membership.DisabledUntil <= clock.UtcNow;

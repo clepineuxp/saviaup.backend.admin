@@ -12,6 +12,7 @@ public sealed class AdminDbContext(DbContextOptions<AdminDbContext> options) : D
     public DbSet<TenantPlanAssignment> TenantPlanAssignments => Set<TenantPlanAssignment>();
     public DbSet<TenantPermissionOverride> TenantPermissionOverrides => Set<TenantPermissionOverride>();
     public DbSet<AdminAuditLog> AuditLogs => Set<AdminAuditLog>();
+    public DbSet<OperationStatusSettings> OperationStatusSettings => Set<OperationStatusSettings>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -96,6 +97,14 @@ public sealed class AdminDbContext(DbContextOptions<AdminDbContext> options) : D
             builder.HasIndex(item => item.OccurredAt);
             builder.HasIndex(item => item.ActorAdminUserId);
             builder.HasIndex(item => new { item.SubjectType, item.SubjectId });
+        });
+
+        modelBuilder.Entity<OperationStatusSettings>(builder =>
+        {
+            builder.ToTable("operation_status_settings");
+            builder.HasKey(item => item.Id);
+            builder.Property(item => item.InactivitySeverity).HasMaxLength(20).IsRequired();
+            builder.Property(item => item.CashRegisterSeverity).HasMaxLength(20).IsRequired();
         });
     }
 }
