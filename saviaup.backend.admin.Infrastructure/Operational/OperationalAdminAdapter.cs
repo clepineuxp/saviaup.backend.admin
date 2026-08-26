@@ -135,9 +135,12 @@ internal sealed class OperationalAdminAdapter(
     }
 
     public async Task<IReadOnlyCollection<OperationalPermission>> GetPermissionCatalogAsync(CancellationToken cancellationToken)
-        => await platformContext.Permissions.AsNoTracking().Select(item => new OperationalPermission(
-            item.Id, item.Code, item.Description, item.Module.Code, item.Module.Name, item.Module.IsActive))
-            .OrderBy(item => item.ModuleCode).ThenBy(item => item.Code).ToArrayAsync(cancellationToken);
+        => await platformContext.Permissions.AsNoTracking()
+            .OrderBy(item => item.Module.Code)
+            .ThenBy(item => item.Code)
+            .Select(item => new OperationalPermission(
+                item.Id, item.Code, item.Description, item.Module.Code, item.Module.Name, item.Module.IsActive))
+            .ToArrayAsync(cancellationToken);
 
     public Task<bool> OrganizationExistsAsync(Guid organizationId, CancellationToken cancellationToken)
         => platformContext.Tenants.AsNoTracking().AnyAsync(item => item.Id == organizationId, cancellationToken);
