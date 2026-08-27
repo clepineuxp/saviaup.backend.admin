@@ -162,23 +162,61 @@ internal sealed class OperationalAdminAdapter(
 
     public async Task ReplaceTenantPermissionsAsync(Guid organizationId, IReadOnlyCollection<string> permissionCodes, CancellationToken cancellationToken)
     {
-        var tenantExists = await platformContext.Tenants.AnyAsync(item => item.Id == organizationId, cancellationToken);
-        if (!tenantExists) throw new InvalidOperationException(AdminErrors.OrganizationNotFound.Code);
-        var uniqueCodes = permissionCodes.Distinct(StringComparer.Ordinal).ToArray();
-        var permissionIds = await platformContext.Permissions.AsNoTracking().Where(item => uniqueCodes.Contains(item.Code))
-            .Select(item => item.Id).ToArrayAsync(cancellationToken);
-        if (permissionIds.Length != uniqueCodes.Length) throw new InvalidOperationException(AdminErrors.PermissionNotFound.Code);
-
-        await using var transaction = await platformContext.Database.BeginTransactionAsync(cancellationToken);
-        var current = await platformContext.TenantPermissions.Where(item => item.TenantId == organizationId).ToArrayAsync(cancellationToken);
-        platformContext.TenantPermissions.RemoveRange(current);
-        await platformContext.TenantPermissions.AddRangeAsync(permissionIds.Select(id => new OperationalTenantPermission
+        try
         {
-            TenantId = organizationId,
-            PermissionId = id
-        }), cancellationToken);
-        await platformContext.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
+            var tenantExists = await platformContext.Tenants.AnyAsync(item => item.Id == organizationId, cancellationToken);
+            if (!tenantExists) throw new InvalidOperationException(AdminErrors.OrganizationNotFound.Code);
+            var uniqueCodes = permissionCodes.Distinct(StringComparer.Ordinal).ToArray();
+            var permissionIds = await platformContext.Permissions.AsNoTracking().Where(item => uniqueCodes.Contains(item.Code))
+                .Select(item => item.Id).ToArrayAsync(cancellationToken);
+            if (permissionIds.Length != uniqueCodes.Length) throw new InvalidOperationException(AdminErrors.PermissionNotFound.Code);
+
+            var ownerRoleId = await applicationContext.Roles.AsNoTracking()
+                .Where(item => item.TenantId == organizationId && item.Code == "TENANT_OWNER")
+                .Select(item => (Guid?)item.Id)
+                .SingleOrDefaultAsync(cancellationToken);
+            if (!ownerRoleId.HasValue) throw new InvalidOperationException(AdminErrors.OwnerRoleMissing.Code);
+
+            var current = await platformContext.TenantPermissions.Where(item => item.TenantId == organizationId).ToArrayAsync(cancellationToken);
+            var currentOwnerPermissions = await applicationContext.RolePermissions
+                .Where(item => item.RoleId == ownerRoleId.Value)
+                .ToArrayAsync(cancellationToken);
+
+            var desiredPermissionIds = permissionIds.ToHashSet();
+            var currentPermissionIds = current.Select(item => item.PermissionId).ToHashSet();
+            var permissionsToRemove = current.Where(item => !desiredPermissionIds.Contains(item.PermissionId)).ToArray();
+            var permissionsToAdd = desiredPermissionIds.Except(currentPermissionIds).Select(id => new OperationalTenantPermission
+            {
+                TenantId = organizationId,
+                PermissionId = id
+            }).ToArray();
+            var currentOwnerPermissionIds = currentOwnerPermissions.Select(item => item.PermissionId).ToHashSet();
+            var ownerPermissionsToRemove = currentOwnerPermissions.Where(item => !desiredPermissionIds.Contains(item.PermissionId)).ToArray();
+            var ownerPermissionsToAdd = desiredPermissionIds.Except(currentOwnerPermissionIds).Select(id => new OperationalRolePermission
+            {
+                RoleId = ownerRoleId.Value,
+                PermissionId = id
+            }).ToArray();
+
+            if (ownerPermissionsToRemove.Length > 0)
+                applicationContext.RolePermissions.RemoveRange(ownerPermissionsToRemove);
+            if (ownerPermissionsToAdd.Length > 0)
+                await applicationContext.RolePermissions.AddRangeAsync(ownerPermissionsToAdd, cancellationToken);
+            if (ownerPermissionsToRemove.Length > 0 || ownerPermissionsToAdd.Length > 0)
+                await applicationContext.SaveChangesAsync(cancellationToken);
+
+            if (permissionsToRemove.Length > 0)
+                platformContext.TenantPermissions.RemoveRange(permissionsToRemove);
+            if (permissionsToAdd.Length > 0)
+                await platformContext.TenantPermissions.AddRangeAsync(permissionsToAdd, cancellationToken);
+            if (permissionsToRemove.Length > 0 || permissionsToAdd.Length > 0)
+                await platformContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+            throw;
+        }
     }
 
     public async Task<bool> SetOrganizationStatusAsync(Guid organizationId, bool isActive, CancellationToken cancellationToken)

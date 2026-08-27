@@ -90,6 +90,7 @@ internal sealed class OperationalPlatformDbContext(DbContextOptions<OperationalP
 internal sealed class OperationalApplicationDbContext(DbContextOptions<OperationalApplicationDbContext> options) : DbContext(options)
 {
     public DbSet<OperationalRole> Roles => Set<OperationalRole>();
+    public DbSet<OperationalRolePermission> RolePermissions => Set<OperationalRolePermission>();
     public DbSet<OperationalOrder> Orders => Set<OperationalOrder>();
     public DbSet<OperationalRestaurantTable> Tables => Set<OperationalRestaurantTable>();
     public DbSet<OperationalCashRegisterShift> CashRegisterShifts => Set<OperationalCashRegisterShift>();
@@ -103,6 +104,12 @@ internal sealed class OperationalApplicationDbContext(DbContextOptions<Operation
             builder.Property(item => item.Code).HasMaxLength(80).IsRequired();
             builder.Property(item => item.Name).HasMaxLength(100).IsRequired();
             builder.Property(item => item.Description).HasMaxLength(500);
+        });
+        modelBuilder.Entity<OperationalRolePermission>(builder =>
+        {
+            builder.ToTable("role_permissions");
+            builder.HasKey(item => new { item.RoleId, item.PermissionId });
+            builder.HasOne<OperationalRole>().WithMany().HasForeignKey(item => item.RoleId).OnDelete(DeleteBehavior.Restrict);
         });
         modelBuilder.Entity<OperationalOrder>(builder =>
         {
