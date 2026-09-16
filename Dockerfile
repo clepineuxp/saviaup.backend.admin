@@ -1,5 +1,6 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
+COPY Directory.Build.props ./
 COPY saviaup.backend.admin.sln ./
 COPY saviaup.backend.admin.Domain/*.csproj saviaup.backend.admin.Domain/
 COPY saviaup.backend.admin.Application/*.csproj saviaup.backend.admin.Application/
