@@ -109,6 +109,12 @@ internal sealed class OperationalRole
     public DateTimeOffset CreatedAt { get; set; }
 }
 
+internal sealed class OperationalRolePermission
+{
+    public Guid RoleId { get; set; }
+    public Guid PermissionId { get; set; }
+}
+
 internal sealed class OperationalOrder
 {
     public Guid Id { get; set; }
