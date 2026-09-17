@@ -14,6 +14,7 @@ public static class AdminErrors
     public static readonly Error OwnerMustBeActiveMember = new("ADMIN_OWNER_MUST_BE_ACTIVE_MEMBER", "El nuevo owner debe ser un miembro activo de la organización.", 422);
     public static readonly Error OwnerCannotBeDisabled = new("ADMIN_OWNER_CANNOT_BE_DISABLED", "El owner no puede deshabilitarse. Transfiere primero la propiedad.", 409);
     public static readonly Error OwnerCannotBeReassigned = new("ADMIN_OWNER_CANNOT_BE_REASSIGNED", "El owner no puede reasignarse. Transfiere primero la propiedad.", 409);
+    public static readonly Error OwnerRoleMissing = new("ADMIN_OWNER_ROLE_MISSING", "La organización no tiene configurado el rol owner predeterminado.", 409);
     public static readonly Error OwnerFallbackRoleMissing = new("ADMIN_OWNER_FALLBACK_ROLE_MISSING", "La organización no tiene otro rol activo para el owner anterior.", 409);
     public static readonly Error MembershipAlreadyExists = new("ADMIN_MEMBERSHIP_ALREADY_EXISTS", "El usuario ya pertenece a la organización destino.", 409);
     public static readonly Error PlanNotFound = new("ADMIN_PLAN_NOT_FOUND", "El plan no existe.", 404);

@@ -22,4 +22,7 @@
     <ProjectReference Include="..\saviaup.backend.admin.Application\saviaup.backend.admin.Application.csproj" />
     <ProjectReference Include="..\saviaup.backend.admin.Domain\saviaup.backend.admin.Domain.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="saviaup.backend.admin.IntegrationTests" />
+  </ItemGroup>
 </Project>
