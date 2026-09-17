@@ -56,6 +56,22 @@ public sealed class PlansUseCase(
             : Result<PlanDetailDto>.Success(await MapDetailAsync(plan, cancellationToken));
     }
 
+    public async Task<Result<DefaultPlanDto>> GetDefaultAsync(CancellationToken cancellationToken)
+    {
+        var plan = await repository.GetDefaultAsync(cancellationToken);
+        if (plan is null)
+            return Result<DefaultPlanDto>.Failure(AdminErrors.PlanNotFound);
+
+        return Result<DefaultPlanDto>.Success(new DefaultPlanDto(
+            plan.Id,
+            plan.Code,
+            plan.Name,
+            plan.Description,
+            plan.MonthlyPrice,
+            plan.Currency,
+            plan.Permissions.Select(item => item.PermissionCode).Order().ToArray()));
+    }
+
     public async Task<Result<PlanDetailDto>> CreateAsync(SavePlanRequest request, CancellationToken cancellationToken)
     {
         var validation = await ValidateAsync(request, null, cancellationToken);

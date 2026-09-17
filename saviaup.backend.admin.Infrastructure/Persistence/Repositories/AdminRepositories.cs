@@ -29,6 +29,26 @@ public sealed class PlanRepository(AdminDbContext context) : IPlanRepository
         => context.Plans.Include(item => item.Permissions).Include(item => item.PriceHistory)
             .SingleOrDefaultAsync(item => item.Id == id, cancellationToken);
 
+    public async Task<Plan?> GetDefaultAsync(CancellationToken cancellationToken)
+    {
+        var activePlans = await context.Plans
+            .Include(item => item.Permissions)
+            .Include(item => item.PriceHistory)
+            .Where(item => item.Status == PlanStatuses.Active)
+            .OrderBy(item => item.MonthlyPrice)
+            .ThenBy(item => item.CreatedAt)
+            .ToArrayAsync(cancellationToken);
+
+        if (activePlans.Length == 0) return null;
+
+        var preferred = activePlans.FirstOrDefault(item =>
+            string.Equals(item.Code, "STANDARD", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(item.Code, "DEFAULT", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(item.Code, "FREE", StringComparison.OrdinalIgnoreCase));
+
+        return preferred ?? activePlans[0];
+    }
+
     public Task<bool> CodeExistsAsync(string code, Guid? excludedId, CancellationToken cancellationToken)
         => context.Plans.AnyAsync(item => item.Code == code && item.Id != excludedId, cancellationToken);
 

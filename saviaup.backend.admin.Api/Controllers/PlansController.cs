@@ -23,6 +23,11 @@ public sealed class PlansController(IPlansUseCase useCase) : ControllerBase
     public async Task<ActionResult<PlanDetailDto>> Get(Guid id, CancellationToken cancellationToken)
         => this.ToActionResult(await useCase.GetAsync(id, cancellationToken));
 
+    [AllowAnonymous]
+    [HttpGet("default")]
+    public async Task<ActionResult<DefaultPlanDto>> Default(CancellationToken cancellationToken)
+        => this.ToActionResult(await useCase.GetDefaultAsync(cancellationToken));
+
     [Authorize(Policy = "SuperAdmin")]
     [HttpPost]
     public async Task<ActionResult<PlanDetailDto>> Create(SavePlanRequest request, CancellationToken cancellationToken)

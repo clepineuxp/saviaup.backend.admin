@@ -134,6 +134,35 @@ public sealed class PlansUseCaseTests
         fixture.Plans.Verify(item => item.AddAsync(It.IsAny<Plan>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    [Fact]
+    public async Task GetDefault_ReturnsDefaultPlan_WhenActivePlanExists()
+    {
+        var fixture = new Fixture();
+        var plan = PlanWith("orders.create", "orders.read");
+        fixture.Plans.Setup(item => item.GetDefaultAsync(It.IsAny<CancellationToken>())).ReturnsAsync(plan);
+
+        var result = await fixture.Create().GetDefaultAsync(CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        Assert.Equal("STANDARD", result.Value.Code);
+        Assert.Equal(2, result.Value.PermissionCodes.Count);
+        Assert.Contains("orders.create", result.Value.PermissionCodes);
+        Assert.Contains("orders.read", result.Value.PermissionCodes);
+    }
+
+    [Fact]
+    public async Task GetDefault_ReturnsNotFound_WhenNoActivePlan()
+    {
+        var fixture = new Fixture();
+        fixture.Plans.Setup(item => item.GetDefaultAsync(It.IsAny<CancellationToken>())).ReturnsAsync((Plan?)null);
+
+        var result = await fixture.Create().GetDefaultAsync(CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(AdminErrors.PlanNotFound.Code, result.Error?.Code);
+    }
+
     private static Plan PlanWith(params string[] permissions) => new()
     {
         Id = PlanId,
