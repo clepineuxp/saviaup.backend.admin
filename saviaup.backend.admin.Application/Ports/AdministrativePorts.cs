@@ -16,6 +16,7 @@ public interface IPlanRepository
 {
     Task<IReadOnlyCollection<Plan>> ListAsync(CancellationToken cancellationToken);
     Task<Plan?> GetAsync(Guid id, CancellationToken cancellationToken);
+    Task<Plan?> GetDefaultAsync(CancellationToken cancellationToken);
     Task<bool> CodeExistsAsync(string code, Guid? excludedId, CancellationToken cancellationToken);
     Task AddAsync(Plan plan, CancellationToken cancellationToken);
     Task<TenantPlanAssignment?> GetAssignmentAsync(Guid tenantId, CancellationToken cancellationToken);

@@ -142,6 +142,15 @@ public sealed record PlanDetailDto(
     IReadOnlyCollection<PlanPriceHistoryDto> PriceHistory,
     int OrganizationCount);
 
+public sealed record DefaultPlanDto(
+    Guid Id,
+    string Code,
+    string Name,
+    string Description,
+    decimal MonthlyPrice,
+    string Currency,
+    IReadOnlyCollection<string> PermissionCodes);
+
 public sealed record SavePlanRequest(
     string Code,
     string Name,

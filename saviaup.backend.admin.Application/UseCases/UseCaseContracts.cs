@@ -20,6 +20,7 @@ public interface IPlansUseCase
     Task<Result<IReadOnlyCollection<PlatformPlanDto>>> ListAsync(CancellationToken cancellationToken);
     Task<Result<IReadOnlyCollection<PlanPermissionOptionDto>>> GetPermissionCatalogAsync(CancellationToken cancellationToken);
     Task<Result<PlanDetailDto>> GetAsync(Guid id, CancellationToken cancellationToken);
+    Task<Result<DefaultPlanDto>> GetDefaultAsync(CancellationToken cancellationToken);
     Task<Result<PlanDetailDto>> CreateAsync(SavePlanRequest request, CancellationToken cancellationToken);
     Task<Result<PlanDetailDto>> UpdateAsync(Guid id, SavePlanRequest request, CancellationToken cancellationToken);
     Task<Result<PlanDetailDto>> SetStatusAsync(Guid id, string status, CancellationToken cancellationToken);
